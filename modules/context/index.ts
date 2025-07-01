@@ -9,6 +9,7 @@ import {
   InteractionResponse,
   Message,
   MessageCreateOptions,
+  MessageEditOptions,
   MessagePayload,
   MessageReplyOptions,
   TextBasedChannel,
@@ -38,11 +39,12 @@ export interface MessageContext<GuildOnly extends boolean = false> extends BaseC
 
   send(options: string | MessagePayload | MessageCreateOptions): Promise<MessageContext>;
   reply(options: string | MessageReplyOptions): Promise<MessageContext>;
+  edit(options: string | MessageEditOptions): Promise<MessageContext>;
 }
 
-export const MessageContext = async (message: Message): Promise<MessageContext> => {
+export const MessageContext = async (message: Message<true>): Promise<MessageContext> => {
   const ctx: Omit<MessageContext, "lang"> = {
-    bot: message.client,
+    bot: message.client as Bot<true>,
     channel: message.channel,
     guild: message.guild,
     author: message.author,
@@ -51,6 +53,7 @@ export const MessageContext = async (message: Message): Promise<MessageContext> 
     options: new CommandOptions(),
     send: async (options) => await MessageContext(await message.channel.send(options)),
     reply: async (options) => await MessageContext(await message.reply(options)),
+    edit: async (options) => await MessageContext(await message.edit(options)),
   };
 
   return {
@@ -97,7 +100,7 @@ export interface ChatInputInteractionContext<GuildOnly extends boolean = false> 
 
 export const ChatInputInteractionContext = async (interaction: ChatInputCommandInteraction): Promise<ChatInputInteractionContext> => {
   const ctx: Omit<ChatInputInteractionContext, "lang"> = {
-    bot: interaction.client,
+    bot: interaction.client as Bot<true>,
     channel: interaction.channel!,
     guild: interaction.guild,
     author: interaction.user,
@@ -152,6 +155,7 @@ export interface InteractionResponseContext extends BaseContext {
 
   send(options: string | MessagePayload | MessageCreateOptions): Promise<MessageContext>;
   reply(options: string | MessageReplyOptions): Promise<MessageContext>;
+  edit(options: string | MessageEditOptions): Promise<MessageContext>;
 }
 
 export const InteractionResponseContext = async (response: InteractionResponse<true>): Promise<InteractionResponseContext> => {
@@ -163,8 +167,9 @@ export const InteractionResponseContext = async (response: InteractionResponse<t
     member: response.interaction.member,
     original: response,
     options: new CommandOptions(),
-    send: async (options) => await MessageContext(await response.interaction.channel!.send(options)),
-    reply: async (options) => await MessageContext(await (await response.fetch()).reply(options)),
+    send: async (options) => await MessageContext(await response.interaction.channel!.send(options)), // TODO: clean those as up
+    reply: async (options) => await MessageContext((await (await response.fetch()).reply(options)) as Message<true>),
+    edit: async (options) => await MessageContext((await response.edit(options)) as Message<true>),
   };
 
   return {
@@ -210,7 +215,7 @@ export interface ButtonInteractionContext extends BaseContext {
 
 export const ButtonInteractionContext = async (interaction: ButtonInteraction): Promise<ButtonInteractionContext> => {
   const ctx: Omit<ButtonInteractionContext, "lang"> = {
-    bot: interaction.client,
+    bot: interaction.client as Bot<true>,
     author: interaction.user,
     channel: interaction.channel!,
     guild: interaction.guild,

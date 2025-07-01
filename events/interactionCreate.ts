@@ -30,6 +30,12 @@ export default (bot: Bot) => {
       await command.run(ctx);
     } catch (error) {
       console.error(error);
+
+      if (interaction.replied || interaction.deferred) {
+        interaction.followUp("An error occurred while executing this command.");
+        return;
+      }
+
       await interaction.reply("An error occurred while executing this command.");
     }
   });

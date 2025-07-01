@@ -1,5 +1,5 @@
 import Bot from "Bot";
-import { ApplicationCommandOptionBase, ApplicationCommandOptionType, GuildMember, PermissionFlagsBits } from "discord.js";
+import { ApplicationCommandOptionBase, ApplicationCommandOptionType, GuildMember, GuildPremiumTier, PermissionFlagsBits } from "discord.js";
 import Command from "./command";
 import { BaseContext } from "./context";
 
@@ -77,4 +77,10 @@ export function niceBytes(x: number) {
   }
 
   return x.toFixed(x < 10 && l > 0 ? 1 : 0) + " " + units[l];
+}
+
+export function maxFileSize(tier?: GuildPremiumTier) {
+  if (tier === GuildPremiumTier.Tier3) return 100 * 1024 * 1024; // 100 MB
+  if (tier === GuildPremiumTier.Tier2) return 50 * 1024 * 1024; // 50 MB
+  return 10 * 1024 * 1024; // 10 MB
 }
