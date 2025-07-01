@@ -2,7 +2,7 @@ import { AceBase } from "acebase";
 import { AceBaseClient, AceBaseClientConnectionSettings } from "acebase-client";
 import { Client, type ClientOptions } from "discord.js";
 import Cache from "modules/cache";
-import { CobaltAPI } from "modules/cobalt/api";
+import { CobaltAPI } from "modules/cobalt";
 import Command from "modules/command";
 import langs from "./lang/index";
 
