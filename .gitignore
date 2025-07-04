@@ -140,3 +140,6 @@ bun.lockb
 
 # cookies
 cookies.json
+
+# keys
+keys.json

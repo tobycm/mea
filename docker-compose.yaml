@@ -18,6 +18,9 @@ services:
       # or else tunneling functionality won't work properly
       API_URL: "https://cobalt.tobycm.dev/"
 
+      API_KEY_URL: "file:///keys.json"
+      API_AUTH_REQUIRED: 1
+
       # if you want to use cookies for fetching data from services,
       # uncomment the next line & volumes section
       # COOKIE_PATH: "/cookies.json"
@@ -37,7 +40,8 @@ services:
       - com.centurylinklabs.watchtower.scope=cobalt
 
     # uncomment only if you use the COOKIE_PATH variable
-    # volumes:
+    volumes:
+      - ./keys.json:/keys.json:ro
     #   - ./cookies.json:/cookies.json
 
   # watchtower updates the cobalt image automatically
@@ -75,7 +79,7 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
-      start_period: 10s
+      start_period: 30s
     labels:
       - com.centurylinklabs.watchtower.scope=cobalt
 

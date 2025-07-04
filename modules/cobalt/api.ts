@@ -20,6 +20,8 @@ export class CobaltAPI {
       ...options,
     });
 
+    // console.log(await response.text())
+
     return response.json();
   }
 
