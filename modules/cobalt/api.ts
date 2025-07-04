@@ -16,12 +16,13 @@ export class CobaltAPI {
 
   async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
         "User-Agent": "Mea/1.0",
         Authorization: this.apiKey ? `Api-Key ${this.apiKey}` : "",
+        ...options?.headers, // Merge any additional headers provided in options
       },
-      ...options,
     });
 
     // console.log(await response.text())
