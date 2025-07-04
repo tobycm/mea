@@ -16,7 +16,7 @@ services:
     environment:
       # replace https://api.url.example/ with your instance's url
       # or else tunneling functionality won't work properly
-      API_URL: "http://localhost:9000/"
+      API_URL: "https://cobalt.tobycm.dev/"
 
       # if you want to use cookies for fetching data from services,
       # uncomment the next line & volumes section
@@ -29,16 +29,16 @@ services:
 
       # see /docs/run-an-instance.md for more variables that you can use here
 
-    # depends_on:
-    #   yt-session-generator:
-    #     condition: service_healthy
+    depends_on:
+      yt-session-generator:
+        condition: service_healthy
 
     labels:
       - com.centurylinklabs.watchtower.scope=cobalt
 
     # uncomment only if you use the COOKIE_PATH variable
-    volumes:
-      - ./cookies.json:/cookies.json
+    # volumes:
+    #   - ./cookies.json:/cookies.json
 
   # watchtower updates the cobalt image automatically
   watchtower:
@@ -50,16 +50,34 @@ services:
 
   # if needed, use this image for automatically generating poToken & visitor_data
   yt-session-generator:
-    image: ghcr.io/imputnet/yt-session-generator:webserver
-
+    image: linuxfight/yt-session-generator:main
+    ports:
+      - 127.0.0.1:8080:8080
+    volumes:
+      - swayvnc-wayvnc-certs:/certs
+    environment:
+      - SWAY_UNSUPPORTED_GPU=true
+      - SWAY_RESOLUTION=1280x720
+      - WAYVNC_PORT=5910
+      - WAYVNC_ENABLE_AUTH=true
+      - WAYVNC_USERNAME=wayvnc
+      - WAYVNC_PASSWORD=wayvnc
+      - VIRTUAL_GPU=true
+    devices:
+      - /dev/dri
+    security_opt:
+      - seccomp:unconfined
     init: true
     restart: unless-stopped
     container_name: yt-session-generator
-    # healthcheck:
-    #   test: ["CMD", "curl", "--fail", "http://localhost:8080/token"]
-    #   interval: 2s
-    #   timeout: 3s
-    #   retries: 15
-    #   start_period: 10s
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/token"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
     labels:
       - com.centurylinklabs.watchtower.scope=cobalt
+
+volumes:
+  swayvnc-wayvnc-certs:

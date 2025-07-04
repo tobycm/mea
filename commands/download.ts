@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { DownloadOptions } from "modules/cobalt/request";
 import Command from "modules/command";
-import { maxFileSize as maxUploadSize, niceBytes } from "modules/utils";
+import { maxFileSize as maxUploadSize } from "modules/utils";
 
 const data = new SlashCommandBuilder().setName("download").setDescription("Download a media link.");
 
@@ -232,7 +232,7 @@ export default new Command({
 
       if (size > maxUploadSize(ctx.guild?.premiumTier)) {
         message.edit({
-          content: `The file is too large to download directly. File size: ${niceBytes(size)}/${niceBytes(maxUploadSize(ctx.guild?.premiumTier))}`,
+          content: `The file is too large to download directly. Download it here: ${result.url}`,
         });
         return;
       }
