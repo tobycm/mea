@@ -33,6 +33,7 @@ const bot = new Bot({
   },
   cobalt: {
     url: process.env.COBALT_API_URL,
+    apiKey: process.env.COBALT_API_KEY,
   },
 });
 

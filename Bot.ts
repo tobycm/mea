@@ -21,6 +21,7 @@ interface CacheOptions {
 
 interface CobaltOptions {
   url: string;
+  apiKey?: string;
 }
 
 interface BotOptions {
@@ -42,7 +43,7 @@ export default class Bot<Ready extends boolean = boolean> extends Client<Ready> 
     if (!options.cache) options.cache = { lifespan: 60000 };
     this.cache = new Cache(options.cache.lifespan);
 
-    this.cobalt = new CobaltAPI(options.cobalt.url);
+    this.cobalt = new CobaltAPI(options.cobalt.url, options.cobalt.apiKey);
   }
 
   commands = new Map<string, Command>();

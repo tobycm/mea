@@ -7,15 +7,19 @@ export class CobaltAPI {
    */
 
   baseUrl: string;
+  private apiKey?: string;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, apiKey?: string) {
     this.baseUrl = baseUrl;
+    this.apiKey = apiKey;
   }
 
   async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       headers: {
         "Content-Type": "application/json",
+        "User-Agent": "Mea/1.0",
+        Authorization: this.apiKey ? `Api-Key ${this.apiKey}` : "",
       },
       ...options,
     });
