@@ -1,6 +1,7 @@
 import { AceBase } from "acebase";
 import { AceBaseClient } from "acebase-client";
 import Cache from "modules/cache";
+import { CobaltAPI } from "modules/cobalt";
 import Command from "modules/command";
 import langs from "./lang/index";
 
@@ -13,5 +14,7 @@ declare module "discord.js" {
     cache: Cache<string, any>;
 
     db: AceBase | AceBaseClient;
+
+    cobalt: CobaltAPI;
   }
 }

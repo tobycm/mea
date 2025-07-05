@@ -34,7 +34,7 @@ export default new Command({
       let prefix = Constants.defaultPrefix;
 
       if (ctx.guild) {
-        prefix = ctx.bot.cache.get(`servers:${ctx.guild.id}:prefix`) ?? Constants.defaultPrefix;
+        prefix = (await ctx.bot.db.ref("servers").child(ctx.guild.id).child("prefix").get<string>()).val() ?? Constants.defaultPrefix;
       }
 
       let content = "# " + bold(inlineCode(command.data.name)) + "\n" + command.data.description;

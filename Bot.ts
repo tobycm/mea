@@ -36,7 +36,7 @@ export default class Bot<Ready extends boolean = boolean> extends Client<Ready> 
   constructor(options: BotOptions) {
     super(options.discord);
 
-    if (options.acebase.type === "local") this.db = new AceBase(options.acebase.databaseName);
+    if (options.acebase.type === "local") this.db = new AceBase(options.acebase.databaseName, { storage: { removeVoidProperties: true } });
     else if (options.acebase.type === "client") this.db = new AceBaseClient(options.acebase);
     else this.db = new AceBase("bot");
 

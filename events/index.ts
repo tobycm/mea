@@ -1,4 +1,5 @@
 import Bot from "Bot";
+import autoChannelDownload from "./autoChannelDownload";
 import ready from "./clientReady";
 import dbReady from "./dbReady";
 import interactionCreate from "./interactionCreate";
@@ -8,6 +9,7 @@ const botEvents: ((bot: Bot) => void)[] = [
   ready, //
   messageCreate,
   interactionCreate,
+  autoChannelDownload,
 ];
 
 const databaseEvents: ((db: Bot["db"]) => void)[] = [

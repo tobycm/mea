@@ -52,15 +52,11 @@ export function parseIdFromUserMention(mention: string): string {
 }
 
 export async function getUserLang(ctx: Omit<BaseContext, "lang">): Promise<Bot["lang"][keyof Bot["lang"]]> {
-  const lang = ctx.bot.cache.get(`users:${ctx.author.id}:lang`) as keyof Bot["lang"];
+  const user = (await ctx.bot.db.ref("users").child(ctx.author.id).child("lang").get<keyof Bot["lang"]>()).val();
 
-  if (lang) return ctx.bot.lang[lang];
+  if (!user) return ctx.bot.lang["en-us"];
 
-  const user = await ctx.bot.db.ref("users").child(ctx.author.id).child("lang").get<keyof Bot["lang"]>();
-
-  if (!user.exists()) return ctx.bot.lang["en-us"];
-
-  return ctx.bot.lang[user.val()!];
+  return ctx.bot.lang[user];
 }
 
 export function milliseconds(ms: number = 0, seconds: number = 0, minutes: number = 0, hours: number = 0, days: number = 0) {

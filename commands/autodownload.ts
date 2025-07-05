@@ -1,16 +1,9 @@
 import { SlashCommandBuilder } from "discord.js";
 import { DownloadOptions } from "modules/cobalt/request";
 import Command from "modules/command";
-import { maxFileSize } from "modules/utils";
 
-const data = new SlashCommandBuilder().setName("download").setDescription("Download a media link.");
+const data = new SlashCommandBuilder().setName("autodownload").setDescription("Set up autodownloading for this channel.");
 
-// --- 1. Required Option ---
-data.addStringOption((option) =>
-  option.setName("link").setDescription("Media link to download (e.g., YouTube video, TikTok, Tweet)").setRequired(true)
-);
-
-// --- 2. General Media & Download Options ---
 data.addStringOption((option) =>
   option
     .setName("download_mode")
@@ -67,7 +60,7 @@ data.addStringOption((option) =>
     )
 );
 
-// --- 3. Output & Processing Options ---
+// --- Output & Processing Options ---
 data.addStringOption((option) =>
   option
     .setName("filename_style")
@@ -88,23 +81,7 @@ data.addBooleanOption((option) =>
     .setRequired(false)
 );
 
-// data.addStringOption((option) =>
-//   option
-//     .setName("local_processing")
-//     .setDescription("Control server-side processing (default: disabled)")
-//     .setRequired(false)
-//     .setChoices(
-//       { name: "Disabled", value: "disabled" },
-//       { name: "Preferred (use if available)", value: "preferred" },
-//       { name: "Forced (fail if not available)", value: "forced" }
-//     )
-// )
-
-// data.addStringOption((option) =>
-//   option.setName("subtitle_lang").setDescription("Download subtitles for a specific language (ISO 639-1 code, e.g., 'en', 'es')").setRequired(false)
-// )
-
-// --- 4. Service-Specific Options ---
+// --- Service-Specific Options ---
 
 // YouTube Options
 data.addStringOption((option) =>
@@ -136,14 +113,6 @@ data.addStringOption((option) =>
   option.setName("youtube_dub_lang").setDescription("YouTube: Download a specific dub language (ISO 639-1 code)").setRequired(false)
 );
 
-// data.addBooleanOption((option) =>
-//   option.setName("youtube_better_audio").setDescription("YouTube: Prefer higher quality audio if available (default: false)").setRequired(false)
-// )
-
-// data.addBooleanOption((option) =>
-//   option.setName("youtube_hls").setDescription("YouTube: Use HLS formats for downloading (default: false)").setRequired(false)
-// )
-
 // TikTok & Xiaohongshu Options
 data.addBooleanOption((option) =>
   option.setName("allow_h265").setDescription("TikTok/Xiaohongshu: Allow downloading videos in H265/HEVC codec (default: false)").setRequired(false)
@@ -160,8 +129,8 @@ data.addBooleanOption((option) =>
 
 export default new Command({
   data,
+  guildOnly: true,
   async run(ctx) {
-    const link = ctx.options.get<string>("link", true);
     const downloadMode = ctx.options.get<string>("download_mode") as DownloadOptions["downloadMode"];
     const quality = ctx.options.get<string>("quality") as DownloadOptions["videoQuality"];
     const audioFormat = ctx.options.get<string>("audio_format") as DownloadOptions["audioFormat"];
@@ -178,10 +147,9 @@ export default new Command({
 
     const convertGif = ctx.options.get<boolean>("convert_gif");
 
-    const message = await ctx.reply("Fetching info...");
+    const message = await ctx.reply("Saving info...");
 
-    const result = await ctx.bot.cobalt.download({
-      url: link,
+    await ctx.bot.db.ref("servers").child(ctx.guild.id).child("autodownload").child(ctx.channel.id).set({
       downloadMode,
       videoQuality: quality,
       audioFormat,
@@ -203,71 +171,6 @@ export default new Command({
       convertGif,
     });
 
-    if (result.status == "error") {
-      ctx.send({ content: `An error occurred: ${result.error.code} ${JSON.stringify(result.error.context)}`, allowedMentions: { parse: [] } });
-      return;
-    }
-
-    if (result.status == "tunnel" || result.status == "redirect") {
-      const file = await fetch(result.url);
-
-      const contentLength = file.headers.get("content-length") || file.headers.get("estimated-content-length");
-      // console.log(`Content-Length: ${contentLength}`);
-
-      if (!contentLength) {
-        message.edit({
-          content: `Failed to determine the file size. Please try again later.`,
-          allowedMentions: { parse: [] },
-        });
-        return;
-      }
-
-      let size = parseInt(contentLength, 10);
-
-      if (downloadMode === "audio") {
-        size /= 8; // cobalt estimation is not very good for audio file
-      }
-
-      // console.log(`File size: ${size} bytes`);
-
-      if (size > maxFileSize(ctx.guild?.premiumTier)) {
-        message.edit({
-          content: `The file is too large to download directly. [Click here to download it](${result.url})`,
-        });
-        return;
-      }
-
-      if (!file.ok) {
-        message.edit({
-          content: `Failed to fetch the file. Status: ${file.status} ${file.statusText}`,
-          allowedMentions: { parse: [] },
-        });
-        return;
-      }
-
-      const buffer = await file.arrayBuffer();
-
-      const inferredExtension =
-        downloadMode === "audio"
-          ? audioFormat === "best"
-            ? ".mp3"
-            : `.${audioFormat}`
-          : youtubeVideoContainer && youtubeVideoContainer !== "auto"
-          ? `.${youtubeVideoContainer}`
-          : ".mp4";
-
-      const filename = result.filename || `download-${Date.now()}${inferredExtension}`;
-
-      message.edit({ content: "Here is your download:" });
-      ctx.send({
-        files: [
-          {
-            name: filename,
-            attachment: Buffer.from(buffer),
-          },
-        ],
-        allowedMentions: { parse: [] },
-      });
-    }
+    message.edit({ content: `Autodownload settings saved for this channel!` });
   },
 });

@@ -11,25 +11,9 @@ export default function messageCreateEvent(bot: Bot) {
   bot.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
-    let prefix: string | null = Constants.defaultPrefix;
-
-    if (message.inGuild()) {
-      const guildPrefix = message.client.cache.get(`servers:${message.guild.id}:prefix`) as string | null | undefined;
-
-      if (guildPrefix === undefined) {
-        // cache miss
-        const s = await message.client.db.ref("servers").child(message.guild.id).child("prefix").get();
-
-        if (!s.exists())
-          // default prefix
-          prefix = null;
-        else prefix = s.val();
-
-        message.client.cache.set(`servers:${message.guild.id}:prefix`, prefix);
-      }
-    }
-
-    if (prefix === null) prefix = Constants.defaultPrefix;
+    const prefix = message.inGuild()
+      ? (await message.client.db.ref("servers").child(message.guild.id).child("prefix").get()).val() || Constants.defaultPrefix
+      : Constants.defaultPrefix;
 
     if (message.content === userMention(message.client.user?.id)) {
       message.reply(`Prefix của mình là ${inlineCode(prefix)}.`);

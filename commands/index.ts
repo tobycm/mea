@@ -1,16 +1,16 @@
 import Bot from "Bot";
 import Command from "modules/command";
+import autodownload from "./autodownload";
 import download from "./download";
 import help from "./help";
 import ping from "./ping";
 import prefix from "./prefix";
-import random from "./random";
 import services from "./services";
 
 const commands: Command[] = [
   ping, // add your commands here
   prefix,
-  random,
+  autodownload,
   services,
   download,
   help,

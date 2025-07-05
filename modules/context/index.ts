@@ -42,7 +42,7 @@ export interface MessageContext<GuildOnly extends boolean = false> extends BaseC
   edit(options: string | MessageEditOptions): Promise<MessageContext>;
 }
 
-export const MessageContext = async (message: Message<true>): Promise<MessageContext> => {
+export const MessageContext = async (message: Message<boolean>): Promise<MessageContext> => {
   const ctx: Omit<MessageContext, "lang"> = {
     bot: message.client as Bot<true>,
     channel: message.channel,
@@ -168,8 +168,8 @@ export const InteractionResponseContext = async (response: InteractionResponse<t
     original: response,
     options: new CommandOptions(),
     send: async (options) => await MessageContext(await response.interaction.channel!.send(options)), // TODO: clean those as up
-    reply: async (options) => await MessageContext((await (await response.fetch()).reply(options)) as Message<true>),
-    edit: async (options) => await MessageContext((await response.edit(options)) as Message<true>),
+    reply: async (options) => await MessageContext(await (await response.fetch()).reply(options)),
+    edit: async (options) => await MessageContext(await response.edit(options)),
   };
 
   return {

@@ -1,4 +1,4 @@
-export default class Cache<K, V> extends Map<K, V & { stale: boolean }> {
+export default class Cache<K, V> extends Map<K, V & { stale?: true }> {
   constructor(lifespan: number) {
     super();
     setInterval(() => this.banWave(), lifespan);
@@ -7,7 +7,7 @@ export default class Cache<K, V> extends Map<K, V & { stale: boolean }> {
   set(key: K, value: V) {
     return super.set(key, {
       ...value,
-      stale: false,
+      stale: undefined,
     });
   }
 
@@ -17,10 +17,13 @@ export default class Cache<K, V> extends Map<K, V & { stale: boolean }> {
 
     this.set(key, {
       ...value,
-      stale: false,
+      stale: undefined,
     });
 
-    return value;
+    return {
+      ...value,
+      stale: undefined,
+    };
   }
 
   update(key: K, value: V) {
@@ -29,6 +32,7 @@ export default class Cache<K, V> extends Map<K, V & { stale: boolean }> {
     this.set(key, {
       ...current,
       ...value,
+      stale: undefined,
     });
   }
 
