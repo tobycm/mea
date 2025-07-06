@@ -1,5 +1,9 @@
 import Bot from "Bot";
+import { exec } from "child_process";
 import { ApplicationCommandOptionBase, ApplicationCommandOptionType, GuildMember, GuildPremiumTier, PermissionFlagsBits } from "discord.js";
+import { mkdirSync } from "fs";
+import { readFile } from "fs/promises";
+import path from "path";
 import Command from "./command";
 import { BaseContext } from "./context";
 
@@ -79,4 +83,40 @@ export function maxFileSize(tier?: GuildPremiumTier) {
   if (tier === GuildPremiumTier.Tier3) return 100 * 1024 * 1024; // 100 MB
   if (tier === GuildPremiumTier.Tier2) return 50 * 1024 * 1024; // 50 MB
   return 10 * 1024 * 1024; // 10 MB
+}
+
+export const timeRegex: RegExp = /(\d{1,2})?:?(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?/g;
+
+interface FFMpegOptions {
+  input: string;
+  filename: string;
+  startTime?: string;
+  endTime?: string;
+}
+
+export async function ffmpegDownload(options: FFMpegOptions): Promise<Buffer> {
+  const { input, filename, startTime, endTime } = options;
+
+  mkdirSync("temp", { recursive: true });
+
+  const filePath = path.join("temp", filename);
+
+  await new Promise((resolve, reject) => {
+    const args: string[] = ["-i", `"${input}"`];
+
+    if (startTime) args.push("-ss", startTime);
+    if (endTime) args.push("-to", endTime);
+
+    args.push(`"${filePath}"`);
+
+    const ffmpeg = exec(`ffmpeg ${args.join(" ")}`, { maxBuffer: 1024 * 1024 * 100 }, (error, stdout, stderr) => {
+      if (error) reject(error);
+      else resolve(stdout);
+    });
+    // ffmpeg.stderr?.on("data", (data) => {
+    //   console.log(`FFmpeg stderr: ${data}`);
+    // });
+  });
+
+  return readFile(filePath);
 }

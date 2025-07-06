@@ -143,3 +143,6 @@ cookies.json
 
 # keys
 keys.json
+
+# Mea specific
+temp/

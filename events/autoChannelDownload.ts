@@ -3,7 +3,8 @@ import Bot from "Bot";
 import { DownloadOptions } from "modules/cobalt/request";
 
 import { Events } from "discord.js";
-import { maxFileSize, niceBytes } from "modules/utils";
+import { guessDownloadOptions } from "modules/cobalt/optionsGuessing";
+import { ffmpegDownload, maxFileSize, niceBytes, timeRegex } from "modules/utils";
 
 type Config = Omit<DownloadOptions, "url">;
 
@@ -25,72 +26,122 @@ export default function messageCreateEvent(bot: Bot) {
 
     if (!config) return;
 
+    message.react("<:meabotloading:1391547808552587264>");
+
     const url = message.content.match(/https:\/\/[^\s/$.?#].[^\s]*/);
-    if (!url) return;
+    if (!url) return message.reactions.removeAll();
+
+    const guessedOptions = guessDownloadOptions(message.content.slice(url.index! + url[0].length).trim());
+
+    const downloadOptions = {
+      ...config,
+      ...guessedOptions,
+    };
+
+    const { audioFormat, downloadMode, youtubeVideoContainer } = downloadOptions;
+
+    const timestamps = message.content
+      .slice(url.index! + url[0].length)
+      .trim()
+      .match(timeRegex);
+
+    let startTime: string | undefined;
+    let endTime: string | undefined;
+
+    if (timestamps) {
+      if (timestamps[1]) {
+        startTime = timestamps[0];
+        endTime = timestamps[1];
+      } else {
+        endTime = timestamps[0];
+      }
+    }
+
+    const inferredFormat =
+      downloadMode === "audio"
+        ? audioFormat === "best"
+          ? "mp3"
+          : audioFormat
+        : youtubeVideoContainer && youtubeVideoContainer !== "auto"
+        ? youtubeVideoContainer
+        : "mp4";
 
     try {
       const result = await message.client.cobalt.download({
         url: url[0],
-        ...config,
+        ...downloadOptions,
       });
 
       console.log("Result status:", result.status);
 
       if (result.status == "error") {
         console.log("Code:", result.error.code);
+        if (result.error.code == "error.api.link.invalid") return;
+        message.reactions.removeAll();
+        message.react("<:error:1391540812634132560>");
+        return;
       }
 
       if (result.status == "tunnel" || result.status == "redirect") {
-        const file = await fetch(result.url);
+        let buffer: Buffer | ArrayBuffer;
 
-        const contentLength = file.headers.get("content-length") || file.headers.get("estimated-content-length");
-        console.log(`Content-Length: ${niceBytes(parseInt(contentLength ?? "0", 10))}`);
+        if (startTime || endTime) {
+          buffer = await ffmpegDownload({
+            input: result.url,
+            filename: result.filename || `download-${Date.now()}.${inferredFormat}`,
+            startTime,
+            endTime,
+          });
+        } else {
+          const file = await fetch(result.url);
 
-        if (!contentLength) {
-          // handle error with reactions in the future
+          const contentLength = file.headers.get("content-length") || file.headers.get("estimated-content-length");
+          console.log(`Content-Length: ${niceBytes(parseInt(contentLength ?? "0", 10))}`);
+
+          if (!contentLength) {
+            // handle error with reactions in the future
+            message.reactions.removeAll();
+            message.react("<:error:1391540812634132560>");
+            return;
+          }
+
+          let size = parseInt(contentLength, 10);
+
+          if (downloadMode === "audio") {
+            size /= 8; // cobalt estimation is not very good for audio file
+          }
+
+          if (size > maxFileSize(message.guild?.premiumTier)) {
+            message.reactions.removeAll();
+            message.react("<:toolarge:1391540759894691962>");
+            return;
+          }
+
+          if (!file.ok) {
+            message.reactions.removeAll();
+            message.react("<:error:1391540812634132560>");
+            return;
+          }
+
+          buffer = await file.arrayBuffer();
+        }
+
+        if (buffer.byteLength > maxFileSize(message.guild?.premiumTier)) {
+          message.reactions.removeAll();
+          message.react("<:toolarge:1391540759894691962>");
           return;
         }
 
-        let size = parseInt(contentLength, 10);
+        const filename = result.filename || `download-${Date.now()}.${inferredFormat}`;
 
-        if (config.downloadMode === "audio") {
-          size /= 8; // cobalt estimation is not very good for audio file
-        }
-
-        if (size > maxFileSize(message.guild?.premiumTier)) {
-          // handle error with reactions in the future
-          return;
-        }
-
-        if (!file.ok) {
-          // handle error with reactions in the future
-          return;
-        }
-
-        const buffer = await file.arrayBuffer();
-
-        const inferredExtension =
-          config.downloadMode === "audio"
-            ? config.audioFormat === "best"
-              ? ".mp3"
-              : `.${config.audioFormat}`
-            : config.youtubeVideoContainer && config.youtubeVideoContainer !== "auto"
-            ? `.${config.youtubeVideoContainer}`
-            : ".mp4";
-
-        const filename = result.filename || `download-${Date.now()}${inferredExtension}`;
-
-        await message.channel.send({
-          files: [
-            {
-              name: filename,
-              attachment: Buffer.from(buffer),
-            },
-          ],
-        });
+        message.channel.send({ files: [{ name: filename, attachment: Buffer.from(buffer) }] });
+        message.reactions.removeAll();
+        message.react("✅");
       }
     } catch (err) {
-      // ignore errors
+      console.error("Error during download:", err);
+      message.reactions.removeAll();
+      message.react("<:error:1391540812634132560>");
     }
   });
 }
