@@ -23,7 +23,7 @@ const options = {
       value: "64",
     },
     {
-      keyword: ["8kbps", "8", "8k"],
+      keyword: ["8kbps", "8"],
       value: "8",
     },
   ],

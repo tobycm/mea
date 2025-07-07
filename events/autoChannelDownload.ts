@@ -26,10 +26,8 @@ export default function messageCreateEvent(bot: Bot) {
 
     if (!config) return;
 
-    message.react("<:meabotloading:1391547808552587264>");
-
     const url = message.content.match(/https:\/\/[^\s/$.?#].[^\s]*/);
-    if (!url) return message.reactions.removeAll();
+    if (!url) return;
 
     const guessedOptions = guessDownloadOptions(message.content.slice(url.index! + url[0].length).trim());
 
@@ -66,6 +64,8 @@ export default function messageCreateEvent(bot: Bot) {
         ? youtubeVideoContainer
         : "mp4";
 
+    message.react("<:meabotloading:1391547808552587264>");
+
     try {
       const result = await message.client.cobalt.download({
         url: url[0],
@@ -76,8 +76,8 @@ export default function messageCreateEvent(bot: Bot) {
 
       if (result.status == "error") {
         console.log("Code:", result.error.code);
-        if (result.error.code == "error.api.link.invalid") return;
         message.reactions.removeAll();
+        if (result.error.code == "error.api.link.invalid") return;
         message.react("<:error:1391540812634132560>");
         return;
       }
