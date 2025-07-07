@@ -140,8 +140,12 @@ export default function messageCreateEvent(bot: Bot) {
       }
     } catch (err) {
       console.error("Error during download:", err);
-      message.reactions.removeAll();
-      message.react("<:error:1391540812634132560>");
+      try {
+        message.reactions.removeAll();
+        message.react("<:error:1391540812634132560>");
+      } catch (error) {
+        /* message is probably gone */
+      }
     }
   });
 }
