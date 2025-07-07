@@ -1,5 +1,4 @@
 import { SlashCommandBuilder } from "discord.js";
-import { DownloadOptions } from "modules/cobalt/request";
 import Command from "modules/command";
 
 const data = new SlashCommandBuilder().setName("removeautodownload").setDescription("Turn off autodownloading for this channel.");
