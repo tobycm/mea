@@ -13,60 +13,60 @@ export default function messageCreateEvent(bot: Bot) {
     if (message.author.bot) return;
     if (!message.inGuild()) return;
 
-    let config: Config | null | undefined = message.client.cache.get(`servers:${message.guild.id}:autodownload:${message.channel.id}`) as
-      | Config
-      | null
-      | undefined;
-
-    if (config === undefined) {
-      // cache miss
-      config = (await message.client.db.ref("servers").child(message.guild.id).child("autodownload").child(message.channel.id).get<Config>()).val();
-      message.client.cache.set(`servers:${message.guild.id}:autodownload:${message.channel.id}`, config);
-    }
-
-    if (!config) return;
-
-    const url = message.content.match(/https:\/\/[^\s/$.?#].[^\s]*/);
-    if (!url) return;
-
-    const guessedOptions = guessDownloadOptions(message.content.slice(url.index! + url[0].length).trim());
-
-    const downloadOptions = {
-      ...config,
-      ...guessedOptions,
-    };
-
-    const { audioFormat, downloadMode, youtubeVideoContainer } = downloadOptions;
-
-    const timestamps = message.content
-      .slice(url.index! + url[0].length)
-      .trim()
-      .match(timeRegex);
-
-    let startTime: string | undefined;
-    let endTime: string | undefined;
-
-    if (timestamps) {
-      if (timestamps[1]) {
-        startTime = timestamps[0];
-        endTime = timestamps[1];
-      } else {
-        endTime = timestamps[0];
-      }
-    }
-
-    const inferredFormat =
-      downloadMode === "audio"
-        ? audioFormat === "best"
-          ? "mp3"
-          : audioFormat
-        : youtubeVideoContainer && youtubeVideoContainer !== "auto"
-        ? youtubeVideoContainer
-        : "mp4";
-
-    message.react("<:meabotloading:1391547808552587264>");
-
     try {
+      let config: Config | null | undefined = message.client.cache.get(`servers:${message.guild.id}:autodownload:${message.channel.id}`) as
+        | Config
+        | null
+        | undefined;
+
+      if (config === undefined) {
+        // cache miss
+        config = (await message.client.db.ref("servers").child(message.guild.id).child("autodownload").child(message.channel.id).get<Config>()).val();
+        message.client.cache.set(`servers:${message.guild.id}:autodownload:${message.channel.id}`, config);
+      }
+
+      if (!config) return;
+
+      const url = message.content.match(/https:\/\/[^\s/$.?#].[^\s]*/);
+      if (!url) return;
+
+      const guessedOptions = guessDownloadOptions(message.content.slice(url.index! + url[0].length).trim());
+
+      const downloadOptions = {
+        ...config,
+        ...guessedOptions,
+      };
+
+      const { audioFormat, downloadMode, youtubeVideoContainer } = downloadOptions;
+
+      const timestamps = message.content
+        .slice(url.index! + url[0].length)
+        .trim()
+        .match(timeRegex);
+
+      let startTime: string | undefined;
+      let endTime: string | undefined;
+
+      if (timestamps) {
+        if (timestamps[1]) {
+          startTime = timestamps[0];
+          endTime = timestamps[1];
+        } else {
+          endTime = timestamps[0];
+        }
+      }
+
+      const inferredFormat =
+        downloadMode === "audio"
+          ? audioFormat === "best"
+            ? "mp3"
+            : audioFormat
+          : youtubeVideoContainer && youtubeVideoContainer !== "auto"
+          ? youtubeVideoContainer
+          : "mp4";
+
+      message.react("<:meabotloading:1391547808552587264>");
+
       const result = await message.client.cobalt.download({
         url: url[0],
         ...downloadOptions,
