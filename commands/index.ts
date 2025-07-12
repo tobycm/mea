@@ -5,12 +5,14 @@ import download from "./download";
 import help from "./help";
 import ping from "./ping";
 import prefix from "./prefix";
+import removeautodownload from "./removeautodownload";
 import services from "./services";
 
 const commands: Command[] = [
   ping, // add your commands here
   prefix,
   autodownload,
+  removeautodownload,
   services,
   download,
   help,
