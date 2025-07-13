@@ -28,9 +28,6 @@ const bot = new Bot({
     type: "local",
     databaseName: "bot",
   },
-  cache: {
-    lifespan: 1000 * 60 * 2, // 2 minutes
-  },
   cobalt: {
     url: process.env.COBALT_API_URL,
     apiKey: process.env.COBALT_API_KEY,

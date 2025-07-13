@@ -1,15 +1,16 @@
 import Bot from "Bot";
-import { setHelpChoices } from "commands/help";
 import { Events } from "discord.js";
 
-const lateInit: ((bot: Bot) => any)[] = [setHelpChoices];
-
 export default (bot: Bot) => {
-  bot.on(Events.ClientReady, (client) => {
+  bot.on(Events.ClientReady, async (client) => {
     console.log(`Logged in as ${client.user?.tag}`);
 
-    for (const init of lateInit) {
-      init(bot);
+    try {
+      const cobaltInfo = await bot.cobalt.hello();
+
+      console.log("Connected to Cobalt API, on version:", cobaltInfo.git.branch, cobaltInfo.git.commit.slice(0, 7));
+    } catch (error) {
+      console.error("Failed to connect to Cobalt API:", error);
     }
   });
 };

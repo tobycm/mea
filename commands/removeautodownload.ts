@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { GuildMember, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import Command from "modules/command";
 
 const data = new SlashCommandBuilder().setName("removeautodownload").setDescription("Turn off autodownloading for this channel.");
@@ -6,11 +6,24 @@ const data = new SlashCommandBuilder().setName("removeautodownload").setDescript
 export default new Command({
   data,
   guildOnly: true,
-  async run(ctx) {
-    const message = await ctx.reply("Saving info...");
+  async run(interaction) {
+    let member = interaction.member;
 
-    await ctx.bot.db.ref("servers").child(ctx.guild.id).child("autodownload").child(ctx.channel.id).remove();
-    
-    message.edit({ content: `Autodownload settings saved for this channel!` });
+    if (!(member instanceof GuildMember))
+      member = interaction.guild.members.cache.get(interaction.author.id) || (await interaction.guild.members.fetch(interaction.author.id));
+
+    if (!member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+      interaction.reply({
+        content: "Missing permission(s): `Manage Messages`",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const message = await interaction.reply("Saving info...");
+
+    await interaction.bot.db.ref("servers").child(interaction.guild.id).child("autodownload").child(interaction.channel.id).remove();
+
+    message.edit({ content: `Autodownload settings removed for this channel!` });
   },
 });

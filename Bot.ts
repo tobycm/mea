@@ -1,7 +1,6 @@
 import { AceBase } from "acebase";
 import { AceBaseClient, AceBaseClientConnectionSettings } from "acebase-client";
 import { Client, type ClientOptions } from "discord.js";
-import Cache from "modules/cache";
 import { CobaltAPI } from "modules/cobalt";
 import Command from "modules/command";
 import langs from "./lang/index";
@@ -15,10 +14,6 @@ interface AceBaseClientOptions extends AceBaseClientConnectionSettings {
   type: "client";
 }
 
-interface CacheOptions {
-  lifespan: number;
-}
-
 interface CobaltOptions {
   url: string;
   apiKey?: string;
@@ -27,7 +22,6 @@ interface CobaltOptions {
 interface BotOptions {
   discord: ClientOptions;
   acebase: AceBaseLocalOptions | AceBaseClientOptions;
-  cache?: CacheOptions;
 
   cobalt: CobaltOptions;
 }
@@ -40,17 +34,12 @@ export default class Bot<Ready extends boolean = boolean> extends Client<Ready> 
     else if (options.acebase.type === "client") this.db = new AceBaseClient(options.acebase);
     else this.db = new AceBase("bot");
 
-    if (!options.cache) options.cache = { lifespan: 60000 };
-    this.cache = new Cache(options.cache.lifespan);
-
     this.cobalt = new CobaltAPI(options.cobalt.url, options.cobalt.apiKey);
   }
 
   commands = new Map<string, Command>();
 
   lang = langs;
-
-  cache: Cache<string, any>;
 
   db: AceBase | AceBaseClient;
 

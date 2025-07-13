@@ -1,5 +1,5 @@
 import Bot from "Bot";
-import { Events, GuildMember } from "discord.js";
+import { Events } from "discord.js";
 import { ChatInputInteractionContext } from "modules/context";
 
 export default (bot: Bot) => {
@@ -21,22 +21,20 @@ export default (bot: Bot) => {
     try {
       const ctx = await ChatInputInteractionContext(interaction);
 
-      for (const option of interaction.options.data) {
-        if (option.value === undefined) continue;
-
-        ctx.options.set(option.name, (option.member as GuildMember | undefined) ?? option.attachment ?? option.value);
-      }
-
       await command.run(ctx);
     } catch (error) {
       console.error(error);
 
-      if (interaction.replied || interaction.deferred) {
-        interaction.followUp("An error occurred while executing this command.");
-        return;
-      }
+      try {
+        if (interaction.replied || interaction.deferred) {
+          interaction.editReply("An error occurred while executing this command.");
+          return;
+        }
 
-      await interaction.reply("An error occurred while executing this command.");
+        await interaction.reply("An error occurred while executing this command.");
+      } catch (error) {
+        /** dead dead */
+      }
     }
   });
 };

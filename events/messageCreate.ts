@@ -1,30 +1,21 @@
 import Bot from "Bot";
-import { ApplicationCommandOptionBase, Events, inlineCode, userMention } from "discord.js";
-import Constants from "modules/constants";
-import { MessageContext } from "modules/context";
-import { messageToInteractionOptions } from "modules/context/converters";
-import { checkPermissions } from "modules/utils";
+import { Events, userMention } from "discord.js";
 
-// const admins = process.env.ADMINS?.split(",") || [];
+const admins = process.env.ADMINS?.split(",") || [];
 
 export default function messageCreateEvent(bot: Bot) {
   bot.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
-    const prefix = message.inGuild()
-      ? (await message.client.db.ref("servers").child(message.guild.id).child("prefix").get()).val() || Constants.defaultPrefix
-      : Constants.defaultPrefix;
+    const mention = userMention(message.client.user.id);
 
-    if (message.content === userMention(message.client.user?.id)) {
-      message.reply(`Prefix của mình là ${inlineCode(prefix)}.`);
-      return;
-    }
+    if (!message.content.startsWith(mention)) return;
 
-    if (!message.content.startsWith(prefix)) return;
-
-    const [commandName, ...args] = message.content.slice(prefix.length, message.content.length).split(" ");
+    const [commandName, ...args] = message.content.slice(mention.length, message.content.length).trim().split(" ");
 
     if (commandName === "deploy") {
+      if (!admins.includes(message.author.id)) return;
+
       const commands = Array.from(message.client.commands.values());
 
       try {
@@ -35,34 +26,8 @@ export default function messageCreateEvent(bot: Bot) {
         console.error("Failed to deploy commands requested by", message.author.displayName, "with error:", error);
         await message.reply("Failed to deploy commands.");
       }
-    } else if (commandName === "test") {
-    } else {
-      const command = message.client.commands.get(commandName);
-      if (!command) return;
-
-      if (command.guildOnly && !message.inGuild()) {
-        await message.reply("This command can only be used in a server.");
-        return;
-      }
-
-      if (command.data.default_member_permissions && message.member) {
-        const missingPermissions = checkPermissions(message.member, BigInt(command.data.default_member_permissions));
-
-        if (missingPermissions.length) {
-          await message.reply(`You are missing the following permissions: ${inlineCode(missingPermissions.join(", "))}`);
-          return;
-        }
-      }
-
-      const ctx = await MessageContext(message);
-      if (messageToInteractionOptions(ctx, args, command.data.options as ApplicationCommandOptionBase[])) return;
-
-      try {
-        await command.run(ctx);
-      } catch (error) {
-        console.error(error);
-        await message.reply("An error occurred while executing this command.");
-      }
+    }
+    if (commandName === "test") {
     }
   });
 }

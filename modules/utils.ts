@@ -1,8 +1,8 @@
 import Bot from "Bot";
 import { exec } from "child_process";
 import { ApplicationCommandOptionBase, ApplicationCommandOptionType, GuildMember, GuildPremiumTier, PermissionFlagsBits } from "discord.js";
-import { createReadStream, mkdirSync } from "fs";
-import { rm, stat } from "fs/promises";
+import { mkdirSync } from "fs";
+import { readFile, rm } from "fs/promises";
 import path from "path";
 import Command from "./command";
 import { BaseContext } from "./context";
@@ -87,20 +87,20 @@ export function maxFileSize(tier?: GuildPremiumTier) {
 
 export const timeRegex: RegExp = /(\d{1,2})?:?(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?/g;
 
-interface FFMpegOptions {
+export interface FFMpegOptions {
   input: string;
   filename: string;
-  startTime?: string;
-  endTime?: string;
+  startTime?: string | null;
+  endTime?: string | null;
 }
 
 export interface MediaFile {
-  byteLength: number;
-  stream: NodeJS.ReadableStream;
+  buffer: Buffer;
   path: string;
 }
 
-export async function ffmpegDownload(options: FFMpegOptions): Promise<MediaFile> {
+// auto delete file after consuming file stream
+export async function ffmpegDownload(options: FFMpegOptions, autoDelete = true): Promise<MediaFile> {
   const { input, filename, startTime, endTime } = options;
 
   mkdirSync("temp", { recursive: true });
@@ -124,17 +124,12 @@ export async function ffmpegDownload(options: FFMpegOptions): Promise<MediaFile>
     // });
   });
 
-  const stats = await stat(filePath);
+  const file = await readFile(filePath);
 
-  const stream = createReadStream(filePath);
+  if (autoDelete) rm(filePath);
 
-  stream.on("end", () => rm(filePath, { force: true }));
-
-  const mediaFile: MediaFile = {
-    byteLength: stats.size,
-    stream,
+  return {
+    buffer: file,
     path: filePath,
   };
-
-  return mediaFile;
 }

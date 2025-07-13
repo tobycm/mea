@@ -1,13 +1,34 @@
 import { SlashCommandBuilder } from "discord.js";
 import { DownloadOptions } from "modules/cobalt/request";
 import Command from "modules/command";
-import { maxFileSize } from "modules/utils";
+import { download, inferExtension, InvalidUrlError, TooLargeError } from "modules/download";
+import { maxFileSize, timeRegex } from "modules/utils";
 
 const data = new SlashCommandBuilder().setName("download").setDescription("Download a media link.");
 
 // --- 1. Required Option ---
 data.addStringOption((option) =>
   option.setName("link").setDescription("Media link to download (e.g., YouTube video, TikTok, Tweet)").setRequired(true)
+);
+
+data.addBooleanOption((option) =>
+  option.setName("ephemeral").setDescription("Whether to send the response as ephemeral (only visible to you). Default: false").setRequired(false)
+);
+
+data.addStringOption((option) =>
+  option
+    .setName("start_time")
+    .setDescription("Start time for the download in HH:MM:SS format (HH is optional, e.g., 01:23:45 or 23:45 or 0:21)")
+    .setRequired(false)
+    .setMaxLength(8)
+);
+
+data.addStringOption((option) =>
+  option
+    .setName("end_time")
+    .setDescription("End time for the download in HH:MM:SS format (HH is optional, e.g., 01:23:45 or 23:45 or 0:21)")
+    .setRequired(false)
+    .setMaxLength(8)
 );
 
 // --- 2. General Media & Download Options ---
@@ -88,22 +109,6 @@ data.addBooleanOption((option) =>
     .setRequired(false)
 );
 
-// data.addStringOption((option) =>
-//   option
-//     .setName("local_processing")
-//     .setDescription("Control server-side processing (default: disabled)")
-//     .setRequired(false)
-//     .setChoices(
-//       { name: "Disabled", value: "disabled" },
-//       { name: "Preferred (use if available)", value: "preferred" },
-//       { name: "Forced (fail if not available)", value: "forced" }
-//     )
-// )
-
-// data.addStringOption((option) =>
-//   option.setName("subtitle_lang").setDescription("Download subtitles for a specific language (ISO 639-1 code, e.g., 'en', 'es')").setRequired(false)
-// )
-
 // --- 4. Service-Specific Options ---
 
 // YouTube Options
@@ -136,14 +141,6 @@ data.addStringOption((option) =>
   option.setName("youtube_dub_lang").setDescription("YouTube: Download a specific dub language (ISO 639-1 code)").setRequired(false)
 );
 
-// data.addBooleanOption((option) =>
-//   option.setName("youtube_better_audio").setDescription("YouTube: Prefer higher quality audio if available (default: false)").setRequired(false)
-// )
-
-// data.addBooleanOption((option) =>
-//   option.setName("youtube_hls").setDescription("YouTube: Use HLS formats for downloading (default: false)").setRequired(false)
-// )
-
 // TikTok & Xiaohongshu Options
 data.addBooleanOption((option) =>
   option.setName("allow_h265").setDescription("TikTok/Xiaohongshu: Allow downloading videos in H265/HEVC codec (default: false)").setRequired(false)
@@ -160,27 +157,39 @@ data.addBooleanOption((option) =>
 
 export default new Command({
   data,
-  async run(ctx) {
-    const link = ctx.options.get<string>("link", true);
-    const downloadMode = ctx.options.get<string>("download_mode") as DownloadOptions["downloadMode"];
-    const quality = ctx.options.get<string>("quality") as DownloadOptions["videoQuality"];
-    const audioFormat = ctx.options.get<string>("audio_format") as DownloadOptions["audioFormat"];
-    const audioBitrate = ctx.options.get<string>("audio_bitrate") as DownloadOptions["audioBitrate"];
-    const filenameStyle = ctx.options.get<string>("filename_style") as DownloadOptions["filenameStyle"];
-    const disableMetadata = ctx.options.get<boolean>("disable_metadata");
+  async run(interaction) {
+    const ephemeral = interaction.options.getBoolean("ephemeral") ?? false;
 
-    const youtubeVideoCodec = ctx.options.get<string>("youtube_video_codec") as DownloadOptions["youtubeVideoCodec"];
-    const youtubeVideoContainer = ctx.options.get<string>("youtube_video_container") as DownloadOptions["youtubeVideoContainer"];
-    const youtubeDubLang = ctx.options.get<string>("youtube_dub_lang");
+    const startTime = interaction.options.getString("start_time");
+    const endTime = interaction.options.getString("end_time");
 
-    const allowH265 = ctx.options.get<boolean>("allow_h265");
-    const tiktokFullAudio = ctx.options.get<boolean>("tiktok_full_audio");
+    const link = interaction.options.getString("link", true);
+    const downloadMode = interaction.options.getString("download_mode") as DownloadOptions["downloadMode"];
+    const quality = interaction.options.getString("quality") as DownloadOptions["videoQuality"];
+    const audioFormat = interaction.options.getString("audio_format") as DownloadOptions["audioFormat"];
+    const audioBitrate = interaction.options.getString("audio_bitrate") as DownloadOptions["audioBitrate"];
+    const filenameStyle = interaction.options.getString("filename_style") as DownloadOptions["filenameStyle"];
+    const disableMetadata = interaction.options.getBoolean("disable_metadata");
 
-    const convertGif = ctx.options.get<boolean>("convert_gif");
+    const youtubeVideoCodec = interaction.options.getString("youtube_video_codec") as DownloadOptions["youtubeVideoCodec"];
+    const youtubeVideoContainer = interaction.options.getString("youtube_video_container") as DownloadOptions["youtubeVideoContainer"];
+    const youtubeDubLang = interaction.options.getString("youtube_dub_lang");
 
-    const message = await ctx.reply("Fetching info...");
+    const allowH265 = interaction.options.getBoolean("allow_h265");
+    const tiktokFullAudio = interaction.options.getBoolean("tiktok_full_audio");
 
-    const result = await ctx.bot.cobalt.download({
+    const convertGif = interaction.options.getBoolean("convert_gif");
+
+    if ((endTime && !endTime.match(timeRegex)) || (startTime && !startTime.match(timeRegex))) {
+      interaction.reply({
+        content: `Invalid end time format. Please use HH:MM:SS (e.g, 01:23:45 or 23:45 or 0:21).`,
+      });
+      return;
+    }
+
+    const message = await interaction.reply({ content: "Fetching info...", ephemeral });
+
+    const options = {
       url: link,
       downloadMode,
       videoQuality: quality,
@@ -201,73 +210,67 @@ export default new Command({
 
       // Twitter/X-specific options
       convertGif,
+    };
+
+    Object.keys(options).forEach((key) => {
+      if (options[key as keyof typeof options] === null) {
+        delete options[key as keyof typeof options];
+      }
     });
 
-    if (result.status == "error") {
-      ctx.send({ content: `An error occurred: ${result.error.code} ${JSON.stringify(result.error.context)}`, allowedMentions: { parse: [] } });
-      return;
-    }
+    const result = await interaction.bot.cobalt.download(options as DownloadOptions);
 
-    if (result.status == "tunnel" || result.status == "redirect") {
-      const file = await fetch(result.url);
+    if (result.status == "error") throw new Error(`Cobalt download error: ${result.error.code} ${JSON.stringify(result.error.context)}`);
 
-      const contentLength = file.headers.get("content-length") || file.headers.get("estimated-content-length");
-      // console.log(`Content-Length: ${contentLength}`);
+    await message.edit({ content: "Downloading..." });
 
-      if (!contentLength) {
+    try {
+      const attachments = await download(result, {
+        endTime,
+        startTime,
+        extension: inferExtension({
+          audioFormat,
+          downloadMode,
+          youtubeVideoContainer,
+        }),
+        maxFileSize: maxFileSize(interaction.guild?.premiumTier || 0),
+        audio: downloadMode === "audio",
+      });
+
+      if (!attachments || !attachments.length) {
         message.edit({
-          content: `Failed to determine the file size. Please try again later.`,
-          allowedMentions: { parse: [] },
+          content: "No files were downloaded. Please check the link and try again.",
         });
         return;
       }
 
-      let size = parseInt(contentLength, 10);
+      await message.edit({
+        content: `Downloaded ${attachments.length} file(s) from <${link}>.\nUploading...`,
+      });
 
-      if (downloadMode === "audio") {
-        size /= 8; // cobalt estimation is not very good for audio file
-      }
-
-      // console.log(`File size: ${size} bytes`);
-
-      if (size > maxFileSize(ctx.guild?.premiumTier)) {
+      await message.edit({
+        content: `-# Downloaded ${attachments.length} file(s) from <${link}>.`,
+        files: attachments,
+      });
+    } catch (error) {
+      if (error instanceof TooLargeError && (result.status === "tunnel" || result.status === "redirect")) {
         message.edit({
           content: `The file is too large to download directly. [Click here to download it](${result.url})`,
         });
         return;
       }
-
-      if (!file.ok) {
+      if (error instanceof InvalidUrlError) {
         message.edit({
-          content: `Failed to fetch the file. Status: ${file.status} ${file.statusText}`,
-          allowedMentions: { parse: [] },
+          content: `Invalid URL provided for cobalt: ${error.url}`,
         });
         return;
       }
 
-      const buffer = await file.arrayBuffer();
-
-      const inferredExtension =
-        downloadMode === "audio"
-          ? audioFormat === "best"
-            ? ".mp3"
-            : `.${audioFormat}`
-          : youtubeVideoContainer && youtubeVideoContainer !== "auto"
-          ? `.${youtubeVideoContainer}`
-          : ".mp4";
-
-      const filename = result.filename || `download-${Date.now()}${inferredExtension}`;
-
-      message.edit({ content: "Here is your download:" });
-      ctx.send({
-        files: [
-          {
-            name: filename,
-            attachment: Buffer.from(buffer),
-          },
-        ],
-        allowedMentions: { parse: [] },
+      message.edit({
+        content: `An error occurred while downloading: ${error}`,
       });
+      console.error("Download error:", error);
+      return;
     }
   },
 });

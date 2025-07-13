@@ -2,7 +2,6 @@ import Bot from "Bot";
 import Command from "modules/command";
 import autodownload from "./autodownload";
 import download from "./download";
-import help from "./help";
 import ping from "./ping";
 import prefix from "./prefix";
 import removeautodownload from "./removeautodownload";
@@ -15,7 +14,6 @@ const commands: Command[] = [
   removeautodownload,
   services,
   download,
-  help,
 ];
 
 export default function setupCommands(bot: Bot) {

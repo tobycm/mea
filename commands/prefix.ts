@@ -13,18 +13,18 @@ export default new Command({
   data,
   guildOnly: true,
 
-  run(ctx) {
-    const prefix = ctx.options.get("prefix");
+  run(interaction) {
+    const prefix = interaction.options.getString("prefix");
 
     if (!prefix) {
-      ctx.bot.db.ref("servers").child(ctx.guild.id).child("prefix").remove();
+      interaction.bot.db.ref("servers").child(interaction.guild.id).child("prefix").remove();
 
-      ctx.reply(ctx.lang.commands.prefix.reset);
+      interaction.reply(interaction.lang.commands.prefix.reset);
       return;
     }
 
-    ctx.bot.db.ref("servers").child(ctx.guild.id).child("prefix").set(prefix);
+    interaction.bot.db.ref("servers").child(interaction.guild.id).child("prefix").set(prefix);
 
-    ctx.reply(ctx.lang.commands.prefix.set.replaceAll("%%prefix%%", inlineCode(prefix)));
+    interaction.reply(interaction.lang.commands.prefix.set.replaceAll("%%prefix%%", inlineCode(prefix)));
   },
 });
