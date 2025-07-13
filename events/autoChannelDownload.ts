@@ -3,6 +3,7 @@ import Bot from "Bot";
 import { DownloadOptions } from "modules/cobalt/request";
 
 import { Events } from "discord.js";
+import { rm } from "fs/promises";
 import { guessDownloadOptions } from "modules/cobalt/optionsGuessing";
 import { ffmpegDownload, maxFileSize, niceBytes, timeRegex } from "modules/utils";
 
@@ -83,15 +84,25 @@ export default function messageCreateEvent(bot: Bot) {
       }
 
       if (result.status == "tunnel" || result.status == "redirect") {
-        let buffer: Buffer | ArrayBuffer;
+        let buffer: ArrayBuffer | NodeJS.ReadableStream;
+        let deleteFile: (() => any) | undefined = undefined;
 
         if (startTime || endTime) {
-          buffer = await ffmpegDownload({
+          const file = await ffmpegDownload({
             input: result.url,
             filename: result.filename || `download-${Date.now()}.${inferredFormat}`,
             startTime,
             endTime,
           });
+
+          if (file.byteLength > maxFileSize(message.guild?.premiumTier)) {
+            message.reactions.removeAll();
+            message.react("<:toolarge:1391540759894691962>");
+            return;
+          }
+
+          buffer = file.stream;
+          deleteFile = () => rm(file.path, { force: true });
         } else {
           const file = await fetch(result.url);
 
@@ -123,20 +134,25 @@ export default function messageCreateEvent(bot: Bot) {
             return;
           }
 
-          buffer = await file.arrayBuffer();
-        }
+          const blob = await file.blob();
 
-        if (buffer.byteLength > maxFileSize(message.guild?.premiumTier)) {
-          message.reactions.removeAll();
-          message.react("<:toolarge:1391540759894691962>");
-          return;
+          if (blob.size > maxFileSize(message.guild?.premiumTier)) {
+            message.reactions.removeAll();
+            message.react("<:toolarge:1391540759894691962>");
+            return;
+          }
+
+          buffer = await file.arrayBuffer();
         }
 
         const filename = result.filename || `download-${Date.now()}.${inferredFormat}`;
 
-        message.channel.send({ files: [{ name: filename, attachment: Buffer.from(buffer) }] });
+        // @ts-ignore
+        await message.channel.send({ files: [{ name: filename, attachment: Buffer.from(buffer) }] });
         message.reactions.removeAll();
         message.react("✅");
+
+        if (deleteFile) deleteFile();
       }
     } catch (err) {
       console.error("Error during download:", err);

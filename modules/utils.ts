@@ -1,8 +1,8 @@
 import Bot from "Bot";
 import { exec } from "child_process";
 import { ApplicationCommandOptionBase, ApplicationCommandOptionType, GuildMember, GuildPremiumTier, PermissionFlagsBits } from "discord.js";
-import { mkdirSync } from "fs";
-import { readFile } from "fs/promises";
+import { createReadStream, mkdirSync } from "fs";
+import { rm, stat } from "fs/promises";
 import path from "path";
 import Command from "./command";
 import { BaseContext } from "./context";
@@ -94,7 +94,13 @@ interface FFMpegOptions {
   endTime?: string;
 }
 
-export async function ffmpegDownload(options: FFMpegOptions): Promise<Buffer> {
+export interface MediaFile {
+  byteLength: number;
+  stream: NodeJS.ReadableStream;
+  path: string;
+}
+
+export async function ffmpegDownload(options: FFMpegOptions): Promise<MediaFile> {
   const { input, filename, startTime, endTime } = options;
 
   mkdirSync("temp", { recursive: true });
@@ -109,14 +115,26 @@ export async function ffmpegDownload(options: FFMpegOptions): Promise<Buffer> {
 
     args.push(`"${filePath}"`);
 
-    const ffmpeg = exec(`ffmpeg ${args.join(" ")}`, { maxBuffer: 1024 * 1024 * 100 }, (error, stdout, stderr) => {
+    exec(`ffmpeg ${args.join(" ")}`, { maxBuffer: 1024 * 1024 * 100 }, (error, stdout) => {
       if (error) reject(error);
       else resolve(stdout);
     });
-    // ffmpeg.stderr?.on("data", (data) => {
+    // .stderr?.on("data", (data) => {
     //   console.log(`FFmpeg stderr: ${data}`);
     // });
   });
 
-  return readFile(filePath);
+  const stats = await stat(filePath);
+
+  const stream = createReadStream(filePath);
+
+  stream.on("end", () => rm(filePath, { force: true }));
+
+  const mediaFile: MediaFile = {
+    byteLength: stats.size,
+    stream,
+    path: filePath,
+  };
+
+  return mediaFile;
 }
