@@ -68,11 +68,11 @@ export default function messageCreateEvent(bot: Bot) {
       if (!attachments || !attachments.length) throw new DownloadError("No attachments returned from download function.");
 
       if (config.deleteOriginal) {
-        await message.delete();
         await message.channel.send({
           content: `-# Downloaded ${attachments.length} file(s) from <${url[0]}>`,
           files: attachments,
         });
+        await message.delete();
       } else {
         await message.reply({
           files: attachments,
