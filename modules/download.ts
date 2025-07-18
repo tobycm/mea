@@ -143,5 +143,5 @@ export async function handleErrors(message: Message, error: unknown) {
   if (error instanceof InvalidUrlError) return;
 
   message.react(Constants.emojis.error);
-  console.error("Download error:", error);
+  console.error("Download error:", JSON.stringify(error));
 }
