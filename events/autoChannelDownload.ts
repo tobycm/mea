@@ -16,14 +16,18 @@ export default function messageCreateEvent(bot: Bot) {
     ).val();
     if (!config) return;
 
+    if (config.prefix && !message.content.startsWith(config.prefix)) return;
+
     const url = message.content.match(/https:\/\/[^\s/$.?#].[^\s]*/);
     if (!url) return;
 
     const guessedOptions = guessDownloadOptions(message.content.slice(url.index! + url[0].length).trim());
 
+    if (guessedOptions.unknowns.length > 3) config.deleteOriginal = false;
+
     const downloadOptions = {
       ...config.cobaltOptions,
-      ...guessedOptions,
+      ...guessedOptions.options,
     };
 
     const timestamps = message.content

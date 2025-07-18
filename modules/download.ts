@@ -7,6 +7,7 @@ import { ffmpegDownload, niceBytes } from "./utils";
 export interface AutodownloadConfig {
   deleteOriginal?: boolean;
   prompt?: boolean;
+  prefix?: string;
 
   cobaltOptions: Omit<DownloadOptions, "url">;
 }

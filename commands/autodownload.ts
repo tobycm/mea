@@ -7,6 +7,7 @@ const data = new SlashCommandBuilder().setName("autodownload").setDescription("S
 
 data.addBooleanOption((option) => option.setName("delete_original").setDescription("Delete the original message after downloading (default: false)"));
 data.addBooleanOption((option) => option.setName("prompt").setDescription("Prompt before downloading (default: false)"));
+data.addStringOption((option) => option.setName("prefix").setDescription("Custom prefix for autodownload").setRequired(false).setMinLength(1));
 
 data.addStringOption((option) =>
   option
@@ -140,6 +141,7 @@ export default new Command({
 
     const deleteOriginal = interaction.options.getBoolean("delete_original") ?? undefined;
     const prompt = interaction.options.getBoolean("prompt") ?? undefined;
+    const prefix = interaction.options.getString("prefix") ?? undefined;
 
     const downloadMode = interaction.options.getString("download_mode") as DownloadOptions["downloadMode"];
     const quality = interaction.options.getString("quality") as DownloadOptions["videoQuality"];
@@ -167,6 +169,7 @@ export default new Command({
       .set({
         deleteOriginal,
         prompt,
+        prefix,
 
         cobaltOptions: {
           downloadMode,

@@ -176,7 +176,7 @@ const booleanOptions = {
   ],
 };
 
-export function guessDownloadOptions(input: string): Omit<DownloadOptions, "url"> {
+export function guessDownloadOptions(input: string): { options: Omit<DownloadOptions, "url">; unknowns: string[] } {
   const words = input.toLowerCase().split(" ");
 
   const optionsGuess: Omit<DownloadOptions, "url"> = {};
@@ -197,5 +197,11 @@ export function guessDownloadOptions(input: string): Omit<DownloadOptions, "url"
     }
   }
 
-  return optionsGuess;
+  const allOptions = Object.values(options).flatMap((value) => value.flatMap((value) => value.keyword));
+  const unknownWords = words.filter((word) => !allOptions.includes(word));
+
+  return {
+    options: optionsGuess,
+    unknowns: unknownWords,
+  };
 }
