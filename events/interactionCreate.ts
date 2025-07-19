@@ -4,6 +4,8 @@ import { ChatInputInteractionContext } from "modules/context";
 
 export default (bot: Bot) => {
   bot.on(Events.InteractionCreate, async (interaction) => {
+    if (interaction.user.id === "542602170080428063") return; // back bling bling
+
     if (interaction.isButton()) return;
 
     if (interaction.isAutocomplete()) {
