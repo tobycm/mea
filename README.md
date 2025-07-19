@@ -1,91 +1,107 @@
-<!-- <img src="" alt="Brand"> -->
+<!-- <img src="" alt="Banner"> -->
 
-# A robust and comprehensive TypeScript template for your next Discord Bot.
+# mea bot
 
-<!-- ![Preview #1](url) -->
+A Discord bot for downloading media files from various services using the [Cobalt API](https://github.com/imputnet/cobalt/tree/main/api).
 
-![Commands demo](https://cloud-2ahhw7s5v-hack-club-bot.vercel.app/0image.png)
+## Table of Contents
 
-## 🎉 Features
+- [Requirements](#requirements)
+- [Getting started](#getting-started)
+- [Features & Commands](#features--commands)
+- [Contributing](#contributing)
+- [License](#license)
 
-- **Customizable Prefixes**: Tailor the bot's command prefix for each server.
-- **Hybrid Commands**: Support for various command types with built-in permission handling.
-- **Easy Slash Command Deployment**: Quickly deploy slash commands with minimal setup.
+## Requirements
 
-## 🛠️ Built-in Tools
+- **Node.js v18** or higher
+- **npm** or **bun** package manager
+- A **Discord bot token** and necessary permissions set up in the [Discord Developer Portal](https://discord.com/developers/applications)
+- A **Cobalt API URL**
+- A **Cobalt API key**
 
-- **Database** powered by [AceBase](https://github.com/appy-one/acebase).
-- **Simple cache** mechanism using key-value storage with lifespan to keep memory low.
-- **Simple slash command deploy method**.
+## Getting started
 
-## 🚀 Getting Started
+### Installation & Setup
 
-1. **Install dependencies**
+```bash
+# Clone the repository
+git clone https://github.com/tobycm/mea.git
 
-```sh {"id":"01J6KF2SNARAPZS0DW9AVGR6SS"}
-bun i
+# Enter into the directory
+cd mea
+
+# Install dependencies
+# Using npm
+npm install
+# Or using bun
+bun install
+
+# Copy the example env file
+cp .env.example .env
+
+# Edit the .env file with your configuration
+
+# DISCORD_TOKEN=your-bot-token
+# COBALT_API_URL=your-cobalt-api-url
+# COBALT_API_KEY=your-cobalt-api-key
+
+# Start the bot
+# Using npm
+npm start
+# Or using bun
+bun start
 ```
 
-or
+### Required permissions
 
-```sh {"id":"01J6KF2SNARAPZS0DW9C4206KX"}
-npm i
+Make sure your bot has the **`applications.commands`** scope enabled under the **OAuth2** settings in the [Discord Developer Portal](https://discord.com/developers/applications).
+
+Also, enable the following **Privileged Gateway Intents** under the **Bot** tab:
+
+- **Server Members Intent**
+- **Message Content Intent**
+
+These are required for the bot to receive relevant events and use slash commands properly.
+
+### Deploying commands
+
+Before using the bot, you need to deploy the commands to your Discord server. In Discord, you can use the following command to deploy them:
+
+```
+@mea deploy
 ```
 
-(replace bun with npm from now on if you don't have bun)
+## Features & Commands
 
-2. **Init environment**
+### Download
 
-```sh {"id":"01J6KF2SNARAPZS0DW9EHDN42T"}
-bun run init
-code .env
-```
+⬇️ Download media files from a URL.
 
-Replace variables with appropriate values. `ADMINS` is a comma-seperated list.
+`/download <url>` +15 optional (e.g. `start_time`, `end_time`, etc.)
 
-3. **Run the bot**
+### Auto-download
 
-```sh {"id":"01J6KF2SNARAPZS0DW9JAS41M0"}
-bun run start
-```
+⚙️ Set up auto-download for media files.
 
-<!-- ## ❓ FAQ
+`/autodownload` +14 optional (e.g. `quality`, `audio_bitrate`, etc.)
 
-**Q: 1**
-A: 1.
+### Remove auto-download
 
-**Q: 2**
+🗑️ Turn off auto-download for media files.
 
-<!-- ## 📚 Documentation
+`/removeautodownload`
 
-## 📄 License
+### Services
 
-This template is licensed under the MIT License. See the [`LICENSE`](https://github.com/tobycm/typescript-discord-bot-template/blob/main/LICENSE).
+🌐 Get a list of supported services.
 
-## 🤝 Contributions
+`/services`
 
-Any contribution is appreciated. Just create an issue or pull request, and I will review it ASAP.
+## Contributing
 
-<!-- TODO: extend this to different instructions to different scenarios -->
+You are welcome to contribute by submitting issues or pull requests!
 
-<!--
-## ☕ Support
+## License
 
-If you find this template useful and want to support its development, consider buying me a coffee or becoming a GitHub sponsor! Your support helps keep this project alive and encourages continuous improvements.
-
-[Buy me a Coffee and GitHub Sponsors button here]
-
-## 📢 Share the Template
-
-Share this template with your community if you find it useful!
-
-- **Twitter**: [Share on Twitter](https://twitter.com/intent/tweet?text=Check%20out%20this%20awesome%20TypeScript%20Discord%20Bot%20template!%20%F0%9F%9A%80%20https%3A%2F%2Fgithub.com%2Ftobycm%2Ftypescript-discord-bot-template)  
-   Spread the word on Twitter and let others know about this template.
-- **Reddit**: [Share on Reddit](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Ftobycm%2Ftypescript-discord-bot-template&title=Check%20out%20this%20TypeScript%20Discord%20Bot%20template!)  
-   Post about it on Reddit and help others find this useful resource.
-- **Discord**:  
-   Share the link with your Discord communities and groups who might find this template useful.
-
-<!-- TODO: replace the texts with buttons -->
-
-<!-- Nah i think this is cute XD -->
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
