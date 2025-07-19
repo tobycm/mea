@@ -1,8 +1,10 @@
-<!-- <img src="" alt="Banner"> -->
+<img src="https://raw.githubusercontent.com/tobycm/mea/refs/heads/main/assets/mea%20bot%20banner.png" alt="Banner">
 
 # mea bot
 
 A Discord bot for downloading media files from various services using the [Cobalt API](https://github.com/imputnet/cobalt/tree/main/api).
+
+Invite the bot here: [https://discord.com/oauth2/authorize?client_id=1389427401066545304](https://discord.com/oauth2/authorize?client_id=1389427401066545304)
 
 ## Table of Contents
 
@@ -14,15 +16,24 @@ A Discord bot for downloading media files from various services using the [Cobal
 
 ## Requirements
 
-- **Node.js v18** or higher
+- **Node.js v20** or higher
 - **npm** or **bun** package manager
 - A **Discord bot token** and necessary permissions set up in the [Discord Developer Portal](https://discord.com/developers/applications)
 - A **Cobalt API URL**
 - A **Cobalt API key**
+- Docker if you want to run the Cobalt instance locally
 
 ## Getting started
 
 ### Installation & Setup
+
+Setting up the cobalt instance:
+
+```bash
+docker compose up -d
+```
+
+Setting up the bot:
 
 ```bash
 # Clone the repository
@@ -33,24 +44,28 @@ cd mea
 
 # Install dependencies
 # Using npm
-npm install
-# Or using bun
 bun install
+# Or using npm
+npm install
 
-# Copy the example env file
-cp .env.example .env
+# Run the initialization script
+bun run init
+# or using npm
+npm run init
 
 # Edit the .env file with your configuration
 
-# DISCORD_TOKEN=your-bot-token
-# COBALT_API_URL=your-cobalt-api-url
-# COBALT_API_KEY=your-cobalt-api-key
+$EDITOR .env
 
 # Start the bot
-# Using npm
-npm start
-# Or using bun
-bun start
+bun run start
+# or using npm
+npm run start
+
+# To run the bot in development mode
+bun run dev
+# or using npm
+npm run dev
 ```
 
 ### Required permissions
@@ -68,7 +83,7 @@ These are required for the bot to receive relevant events and use slash commands
 
 Before using the bot, you need to deploy the commands to your Discord server. In Discord, you can use the following command to deploy them:
 
-```
+```sh
 @mea deploy
 ```
 
