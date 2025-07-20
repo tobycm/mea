@@ -5,6 +5,7 @@ import { Events } from "discord.js";
 import { guessDownloadOptions } from "modules/cobalt/optionsGuessing";
 import { AutodownloadConfig, download, DownloadError, handleErrors, inferExtension, InvalidUrlError } from "modules/download";
 import { maxFileSize, timeRegex } from "modules/utils";
+import { inspect } from "util";
 
 export default function messageCreateEvent(bot: Bot) {
   bot.on(Events.MessageCreate, async (message) => {
@@ -52,7 +53,7 @@ export default function messageCreateEvent(bot: Bot) {
 
       if (result.status == "error") {
         if (result.error.code == "error.api.link.invalid") throw new InvalidUrlError(url[0]);
-        throw new DownloadError(`Cobalt download error: ${result.error}`);
+        throw new DownloadError(`Cobalt download error: ${inspect(result.error, true, 3, true)}`);
       }
 
       message.react(Constants.emojis.loading);
