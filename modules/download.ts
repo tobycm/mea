@@ -1,5 +1,6 @@
 import { AttachmentPayload, Message } from "discord.js";
 import Constants from "modules/constants";
+import { inspect } from "util";
 import { DownloadOptions } from "./cobalt/request";
 import { CobaltResponse } from "./cobalt/response";
 import { ffmpegDownload, niceBytes } from "./utils";
@@ -143,8 +144,8 @@ export async function handleErrors(message: Message, error: unknown) {
   }
   if (error instanceof InvalidUrlError) return;
 
-  if (error instanceof Error) console.error("Download error:", error.message);
+  // if (error instanceof Error) console.error("Download error:", error.message);
 
   message.react(Constants.emojis.error);
-  console.error("Download error:", JSON.stringify(error));
+  console.error("Download error:", inspect(error, true, 3, true));
 }
