@@ -1,17 +1,8 @@
 import { DownloadOptions } from "./request";
 import { CobaltResponse, HelloResponse } from "./response";
 
-// example fetch wrapper for type
-async function f<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await globalThis.fetch(input, init);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return await response.json();
-}
-
 interface CobaltAPIOptions {
-  fetch?: typeof f;
+  fetch?: <T>(input: RequestInfo, init?: RequestInit) => Promise<T>;
 }
 
 export class CobaltAPI {
